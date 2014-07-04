@@ -92,25 +92,27 @@ class SkipList {
   };
 
  private:
-  enum { kMaxHeight = 12 };
+  enum { kMaxHeight = 12 };  // 跳表的最大高度
 
   // Immutable after construction
   Comparator const compare_;
   Arena* const arena_;    // Arena used for allocations of nodes
 
-  Node* const head_;
+  Node* const head_; // 跳表头
 
   // Modified only by Insert().  Read racily by readers, but stale
   // values are ok.
+  // 跳表的最大高度，insert的可能时候会被修改
   port::AtomicPointer max_height_;   // Height of the entire list
 
+  // 当前跳表的最大高度
   inline int GetMaxHeight() const {
     return static_cast<int>(
         reinterpret_cast<intptr_t>(max_height_.NoBarrier_Load()));
   }
 
   // Read/written only by Insert().
-  Random rnd_;
+  Random rnd_;  //随机数，插入节点的时候用来生成高度
 
   Node* NewNode(const Key& key, int height);
   int RandomHeight();
@@ -173,12 +175,14 @@ struct SkipList<Key,Comparator>::Node {
 
  private:
   // Array of length equal to the node height.  next_[0] is lowest level link.
-  port::AtomicPointer next_[1];
+  // 前向指针，数组大小与节点的height
+  port::AtomicPointer next_[1];  
 };
 
 template<typename Key, class Comparator>
 typename SkipList<Key,Comparator>::Node*
 SkipList<Key,Comparator>::NewNode(const Key& key, int height) {
+  // 根据层数申请内存空间
   char* mem = arena_->AllocateAligned(
       sizeof(Node) + sizeof(port::AtomicPointer) * (height - 1));
   return new (mem) Node(key);
@@ -220,6 +224,7 @@ inline void SkipList<Key,Comparator>::Iterator::Prev() {
 
 template<typename Key, class Comparator>
 inline void SkipList<Key,Comparator>::Iterator::Seek(const Key& target) {
+  // 找到key所在的节点
   node_ = list_->FindGreaterOrEqual(target, NULL);
 }
 
@@ -230,6 +235,7 @@ inline void SkipList<Key,Comparator>::Iterator::SeekToFirst() {
 
 template<typename Key, class Comparator>
 inline void SkipList<Key,Comparator>::Iterator::SeekToLast() {
+  // 跳转到最后一个节点
   node_ = list_->FindLast();
   if (node_ == list_->head_) {
     node_ = NULL;
@@ -239,6 +245,10 @@ inline void SkipList<Key,Comparator>::Iterator::SeekToLast() {
 template<typename Key, class Comparator>
 int SkipList<Key,Comparator>::RandomHeight() {
   // Increase height with probability 1 in kBranching
+  // 随机产生一个跳表的高度，从1开始，1/4 的概率加1
+  // height=1:概率3/4
+  // height=2:概率3/16
+  // height=n:概率(3/4)*(1/4)^n
   static const unsigned int kBranching = 4;
   int height = 1;
   while (height < kMaxHeight && ((rnd_.Next() % kBranching) == 0)) {
@@ -252,23 +262,27 @@ int SkipList<Key,Comparator>::RandomHeight() {
 template<typename Key, class Comparator>
 bool SkipList<Key,Comparator>::KeyIsAfterNode(const Key& key, Node* n) const {
   // NULL n is considered infinite
+  // NULL表示node后没有节点
+  // 返回如果key在节点之后，返回true
   return (n != NULL) && (compare_(n->key, key) < 0);
 }
 
 template<typename Key, class Comparator>
 typename SkipList<Key,Comparator>::Node* SkipList<Key,Comparator>::FindGreaterOrEqual(const Key& key, Node** prev)
     const {
+  // 找到大于等于key的第一个node
   Node* x = head_;
   int level = GetMaxHeight() - 1;
+  // 从最高层开始找
   while (true) {
     Node* next = x->Next(level);
     if (KeyIsAfterNode(key, next)) {
       // Keep searching in this list
       x = next;
     } else {
-      if (prev != NULL) prev[level] = x;
-      if (level == 0) {
-        return next;
+      if (prev != NULL) prev[level] = x; // 记录前置节点
+      if (level == 0) {// 到了最底层
+        return next; // 这层的key不一定相等
       } else {
         // Switch to next list
         level--;
@@ -280,12 +294,15 @@ typename SkipList<Key,Comparator>::Node* SkipList<Key,Comparator>::FindGreaterOr
 template<typename Key, class Comparator>
 typename SkipList<Key,Comparator>::Node*
 SkipList<Key,Comparator>::FindLessThan(const Key& key) const {
+  // 找到小于key的节点
   Node* x = head_;
   int level = GetMaxHeight() - 1;
+  // 从最高层找
   while (true) {
     assert(x == head_ || compare_(x->key, key) < 0);
     Node* next = x->Next(level);
     if (next == NULL || compare_(next->key, key) >= 0) {
+      // 如果当前层的next要比key大，则找下一层，直到level为0
       if (level == 0) {
         return x;
       } else {
@@ -301,6 +318,7 @@ SkipList<Key,Comparator>::FindLessThan(const Key& key) const {
 template<typename Key, class Comparator>
 typename SkipList<Key,Comparator>::Node* SkipList<Key,Comparator>::FindLast()
     const {
+  // 从最高层开始找最后一个节点，一直到level为0，且next为NULL
   Node* x = head_;
   int level = GetMaxHeight() - 1;
   while (true) {
@@ -325,6 +343,7 @@ SkipList<Key,Comparator>::SkipList(Comparator cmp, Arena* arena)
       head_(NewNode(0 /* any key will do */, kMaxHeight)),
       max_height_(reinterpret_cast<void*>(1)),
       rnd_(0xdeadbeef) {
+  // 创建跳表，head的高度为跳表的最大高度
   for (int i = 0; i < kMaxHeight; i++) {
     head_->SetNext(i, NULL);
   }
@@ -334,15 +353,18 @@ template<typename Key, class Comparator>
 void SkipList<Key,Comparator>::Insert(const Key& key) {
   // TODO(opt): We can use a barrier-free variant of FindGreaterOrEqual()
   // here since Insert() is externally synchronized.
+  // 寻找插入节点的位置，prev为各节点的前置节点，x为要插入的位置
   Node* prev[kMaxHeight];
   Node* x = FindGreaterOrEqual(key, prev);
 
   // Our data structure does not allow duplicate insertion
   assert(x == NULL || !Equal(key, x->key));
-
+  
+  // 随机产生新节点的高度，并调整该跳表的最大高度
   int height = RandomHeight();
   if (height > GetMaxHeight()) {
     for (int i = GetMaxHeight(); i < height; i++) {
+      // 如果新的高度超过了旧高度，则新节点的前置节点为head
       prev[i] = head_;
     }
     //fprintf(stderr, "Change height from %d to %d\n", max_height_, height);
@@ -354,14 +376,18 @@ void SkipList<Key,Comparator>::Insert(const Key& key) {
     // the loop below.  In the former case the reader will
     // immediately drop to the next level since NULL sorts after all
     // keys.  In the latter case the reader will use the new node.
+    // 在这里修改跳表的最大高度是线程安全的
     max_height_.NoBarrier_Store(reinterpret_cast<void*>(height));
   }
 
   x = NewNode(key, height);
   for (int i = 0; i < height; i++) {
+    // 插入新节点
     // NoBarrier_SetNext() suffices since we will add a barrier when
     // we publish a pointer to "x" in prev[i].
+    // 新节点的next指向原前置节点下一个
     x->NoBarrier_SetNext(i, prev[i]->NoBarrier_Next(i));
+    // 前置节点的next指向新节点
     prev[i]->SetNext(i, x);
   }
 }

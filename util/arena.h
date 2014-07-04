@@ -26,13 +26,14 @@ class Arena {
   // Returns an estimate of the total memory usage of data allocated
   // by the arena (including space allocated but not yet used for user
   // allocations).
+  // 返回当前占用的内存，包括block以及std::vector占用
   size_t MemoryUsage() const {
     return blocks_memory_ + blocks_.capacity() * sizeof(char*);
   }
 
  private:
-  char* AllocateFallback(size_t bytes);
-  char* AllocateNewBlock(size_t block_bytes);
+  char* AllocateFallback(size_t bytes); // 如果旧的block空间不够，则申请一个新的block
+  char* AllocateNewBlock(size_t block_bytes);  // 申请一个新的block
 
   // Allocation state
   char* alloc_ptr_;   //当前空闲block地址

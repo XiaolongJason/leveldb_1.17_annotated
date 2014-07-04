@@ -96,9 +96,12 @@ class DBIter: public Iterator {
 
   inline void ClearSavedValue() {
     if (saved_value_.capacity() > 1048576) {
+      // 如果大于1M的话，和空的string swap
+      // 为了释放内存，因为clear并没有改变string的capacity
       std::string empty;
       swap(empty, saved_value_);
     } else {
+      // 如果小于1M，直接clear
       saved_value_.clear();
     }
   }

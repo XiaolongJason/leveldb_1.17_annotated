@@ -325,19 +325,23 @@ class Compaction {
 
   // Return the level that is being compacted.  Inputs from "level"
   // and "level+1" will be merged to produce a set of "level+1" files.
+  // 返回进行compact的level，level和level+1的文件会合并成level+1的文件
   int level() const { return level_; }
 
   // Return the object that holds the edits to the descriptor done
   // by this compaction.
+  // 返回VersionEdit，会记录到manifest文件中
   VersionEdit* edit() { return &edit_; }
 
   // "which" must be either 0 or 1
+  // 返回level或者level+1层的文件个数，which = 0,1
   int num_input_files(int which) const { return inputs_[which].size(); }
 
   // Return the ith input file at "level()+which" ("which" must be 0 or 1).
   FileMetaData* input(int which, int i) const { return inputs_[which][i]; }
 
   // Maximum size of files to build during this compaction.
+  // compaction最大输出文件
   uint64_t MaxOutputFileSize() const { return max_output_file_size_; }
 
   // Is this a trivial compaction that can be implemented by just
