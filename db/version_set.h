@@ -325,23 +325,23 @@ class Compaction {
 
   // Return the level that is being compacted.  Inputs from "level"
   // and "level+1" will be merged to produce a set of "level+1" files.
-  // ·µ»Ø½øĞĞcompactµÄlevel£¬levelºÍlevel+1µÄÎÄ¼ş»áºÏ²¢³Élevel+1µÄÎÄ¼ş
+  // è¿”å›è¿›è¡Œcompactçš„levelï¼Œlevelå’Œlevel+1çš„æ–‡ä»¶ä¼šåˆå¹¶æˆlevel+1çš„æ–‡ä»¶
   int level() const { return level_; }
 
   // Return the object that holds the edits to the descriptor done
   // by this compaction.
-  // ·µ»ØVersionEdit£¬»á¼ÇÂ¼µ½manifestÎÄ¼şÖĞ
+  // è¿”å›VersionEditï¼Œä¼šè®°å½•åˆ°manifestæ–‡ä»¶ä¸­
   VersionEdit* edit() { return &edit_; }
 
   // "which" must be either 0 or 1
-  // ·µ»Ølevel»òÕßlevel+1²ãµÄÎÄ¼ş¸öÊı£¬which = 0,1
+  // è¿”å›levelæˆ–è€…level+1å±‚çš„æ–‡ä»¶ä¸ªæ•°ï¼Œwhich = 0,1
   int num_input_files(int which) const { return inputs_[which].size(); }
 
   // Return the ith input file at "level()+which" ("which" must be 0 or 1).
   FileMetaData* input(int which, int i) const { return inputs_[which][i]; }
 
   // Maximum size of files to build during this compaction.
-  // compaction×î´óÊä³öÎÄ¼ş
+  // compactionæœ€å¤§è¾“å‡ºæ–‡ä»¶
   uint64_t MaxOutputFileSize() const { return max_output_file_size_; }
 
   // Is this a trivial compaction that can be implemented by just

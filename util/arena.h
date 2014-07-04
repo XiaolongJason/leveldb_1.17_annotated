@@ -26,24 +26,24 @@ class Arena {
   // Returns an estimate of the total memory usage of data allocated
   // by the arena (including space allocated but not yet used for user
   // allocations).
-  // ·µ»Øµ±Ç°Õ¼ÓÃµÄÄÚ´æ£¬°üÀ¨blockÒÔ¼°std::vectorÕ¼ÓÃ
+  // è¿”å›å½“å‰å ç”¨çš„å†…å­˜ï¼ŒåŒ…æ‹¬blockä»¥åŠstd::vectorå ç”¨
   size_t MemoryUsage() const {
     return blocks_memory_ + blocks_.capacity() * sizeof(char*);
   }
 
  private:
-  char* AllocateFallback(size_t bytes); // Èç¹û¾ÉµÄblock¿Õ¼ä²»¹»£¬ÔòÉêÇëÒ»¸öĞÂµÄblock
-  char* AllocateNewBlock(size_t block_bytes);  // ÉêÇëÒ»¸öĞÂµÄblock
+  char* AllocateFallback(size_t bytes); // å¦‚æœæ—§çš„blockç©ºé—´ä¸å¤Ÿï¼Œåˆ™ç”³è¯·ä¸€ä¸ªæ–°çš„block
+  char* AllocateNewBlock(size_t block_bytes);  // ç”³è¯·ä¸€ä¸ªæ–°çš„block
 
   // Allocation state
-  char* alloc_ptr_;   //µ±Ç°¿ÕÏĞblockµØÖ·
-  size_t alloc_bytes_remaining_;  //µ±Ç°¿ÕÏĞµÄblockÊ£ÓàÄÚ´æ´óĞ¡
+  char* alloc_ptr_;   //å½“å‰ç©ºé—²blockåœ°å€
+  size_t alloc_bytes_remaining_;  //å½“å‰ç©ºé—²çš„blockå‰©ä½™å†…å­˜å¤§å°
 
   // Array of new[] allocated memory blocks
-  std::vector<char*> blocks_; //ÒÑ¾­ÉêÇëµÄblockµÄµØÖ·¼¯ºÏ
+  std::vector<char*> blocks_; //å·²ç»ç”³è¯·çš„blockçš„åœ°å€é›†åˆ
 
   // Bytes of memory in blocks allocated so far
-  size_t blocks_memory_;   //ÒÑ¾­ÉêÇëµÄËùÓĞblockµÄÄÚ´æ´óĞ¡
+  size_t blocks_memory_;   //å·²ç»ç”³è¯·çš„æ‰€æœ‰blockçš„å†…å­˜å¤§å°
 
   // No copying allowed
   Arena(const Arena&);
@@ -56,7 +56,7 @@ inline char* Arena::Allocate(size_t bytes) {
   // them for our internal use).
   assert(bytes > 0);
   if (bytes <= alloc_bytes_remaining_) {
-	//¼ì²éµ±Ç°µÄblockÊÇ·ñ¿ÉÒÔ·ÖÅä£¬Èç¹û¿ÉÒÔ£¬Ö±½Ó·ÖÅä
+	//æ£€æŸ¥å½“å‰çš„blockæ˜¯å¦å¯ä»¥åˆ†é…ï¼Œå¦‚æœå¯ä»¥ï¼Œç›´æ¥åˆ†é…
     char* result = alloc_ptr_;
     alloc_ptr_ += bytes;
     alloc_bytes_remaining_ -= bytes;

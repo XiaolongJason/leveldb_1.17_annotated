@@ -82,7 +82,7 @@ struct DBImpl::CompactionState {
 };
 
 // Fix user-supplied options to be reasonable
-// µ÷ÕûÓÃ»§ÊäÈëÊı¾İ£¬Ê¹Æä´¦ÓÚºÏÀí·¶Î§ [minvalue, maxvalue]
+// è°ƒæ•´ç”¨æˆ·è¾“å…¥æ•°æ®ï¼Œä½¿å…¶å¤„äºåˆç†èŒƒå›´ [minvalue, maxvalue]
 template <class T,class V>
 static void ClipToRange(T* ptr, V minvalue, V maxvalue) {
   if (static_cast<V>(*ptr) > maxvalue) *ptr = maxvalue;
@@ -118,10 +118,10 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
     : env_(raw_options.env),
       internal_comparator_(raw_options.comparator),
       internal_filter_policy_(raw_options.filter_policy),
-      options_(SanitizeOptions(dbname, &internal_comparator_,  // ±ØĞëÏÈµ÷ÓÃSanitizeOptionsÀ´³õÊ¼»¯options_
+      options_(SanitizeOptions(dbname, &internal_comparator_,  // å¿…é¡»å…ˆè°ƒç”¨SanitizeOptionsæ¥åˆå§‹åŒ–options_
                                &internal_filter_policy_, raw_options)),
-      owns_info_log_(options_.info_log != raw_options.info_log),  // ÅĞ¶ÏÊÇ·ñÓĞ×Ô¼ºµÄinfo log
-	  owns_cache_(options_.block_cache != raw_options.block_cache), // ÅĞ¶ÏÊÇ·ñÓĞ×Ô¼ºµÄblock_cache
+      owns_info_log_(options_.info_log != raw_options.info_log),  // åˆ¤æ–­æ˜¯å¦æœ‰è‡ªå·±çš„info log
+	  owns_cache_(options_.block_cache != raw_options.block_cache), // åˆ¤æ–­æ˜¯å¦æœ‰è‡ªå·±çš„block_cache
       dbname_(dbname),
       db_lock_(NULL),
       shutting_down_(NULL),
@@ -139,10 +139,10 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
   has_imm_.Release_Store(NULL);
 
   // Reserve ten files or so for other uses and give the rest to TableCache.
-  // ´´½¨TableCache£¬¸øÆäËûÎÄ¼şÓàÁô¾ä±ú
+  // åˆ›å»ºTableCacheï¼Œç»™å…¶ä»–æ–‡ä»¶ä½™ç•™å¥æŸ„
   const int table_cache_size = options_.max_open_files - kNumNonTableCacheFiles;
   table_cache_ = new TableCache(dbname_, &options_, table_cache_size);
-  // ´´½¨VersionSet
+  // åˆ›å»ºVersionSet
   versions_ = new VersionSet(dbname_, &options_, table_cache_,
                              &internal_comparator_);
 }
@@ -150,18 +150,18 @@ DBImpl::DBImpl(const Options& raw_options, const std::string& dbname)
 DBImpl::~DBImpl() {
   // Wait for background work to finish
   mutex_.Lock();
-  // ÉèÖÃshuting down±ê¼Ç£¬ºóÌ¨Ïß³ÌµÈ´ı±ê¼ÇÍË³ö.
+  // è®¾ç½®shuting downæ ‡è®°ï¼Œåå°çº¿ç¨‹ç­‰å¾…æ ‡è®°é€€å‡º.
   shutting_down_.Release_Store(this);  // Any non-NULL value is ok
-  // µÈ´ıbg_compaction_scheduled_ÖÃÎ»
+  // ç­‰å¾…bg_compaction_scheduled_ç½®ä½
   while (bg_compaction_scheduled_) {
     bg_cv_.Wait();
   }
   mutex_.Unlock();
-  // ÊÍ·ÅDBËø
+  // é‡Šæ”¾DBé”
   if (db_lock_ != NULL) {
     env_->UnlockFile(db_lock_);
   }
-  // ×ÊÔ´ÇåÀí
+  // èµ„æºæ¸…ç†
   delete versions_;
   if (mem_ != NULL) mem_->Unref();
   if (imm_ != NULL) imm_->Unref();
@@ -185,7 +185,7 @@ Status DBImpl::NewDB() {
   new_db.SetNextFile(2);
   new_db.SetLastSequence(0);
   
-  // ĞÂ½¨Ò»¸öManifestÎÄ¼ş
+  // æ–°å»ºä¸€ä¸ªManifestæ–‡ä»¶
   const std::string manifest = DescriptorFileName(dbname_, 1);
   WritableFile* file;
   Status s = env_->NewWritableFile(manifest, &file);
@@ -193,7 +193,7 @@ Status DBImpl::NewDB() {
     return s;
   }
   {
-	// ManifestÎÄ¼ş×÷Îªlog¸ñÊ½´ò¿ª£¬½«VersionEditĞòÁĞ»¯Ö®ºóĞ´Èë    
+	// Manifestæ–‡ä»¶ä½œä¸ºlogæ ¼å¼æ‰“å¼€ï¼Œå°†VersionEditåºåˆ—åŒ–ä¹‹åå†™å…¥    
     log::Writer log(file);
     std::string record;
     new_db.EncodeTo(&record);
@@ -205,7 +205,7 @@ Status DBImpl::NewDB() {
   delete file;
   if (s.ok()) {
     // Make "CURRENT" file that points to the new manifest file.
-	// ½«ĞÂ½¨µÄManifestÎÄ¼şÃûĞ´ÈëCURRENTÎÄ¼ş
+	// å°†æ–°å»ºçš„Manifestæ–‡ä»¶åå†™å…¥CURRENTæ–‡ä»¶
     s = SetCurrentFile(env_, dbname_, 1);
   } else {
     env_->DeleteFile(manifest);
@@ -213,7 +213,7 @@ Status DBImpl::NewDB() {
   return s;
 }
 
-// Èç¹ûparanoid_checksÃ»ÓĞÉèÖÃÎªtrue£¬ºöÂÔ´íÎó
+// å¦‚æœparanoid_checksæ²¡æœ‰è®¾ç½®ä¸ºtrueï¼Œå¿½ç•¥é”™è¯¯
 void DBImpl::MaybeIgnoreError(Status* s) const {
   if (s->ok() || options_.paranoid_checks) {
     // No change needed
@@ -231,11 +231,11 @@ void DBImpl::DeleteObsoleteFiles() {
   }
 
   // Make a set of all of the live files
-  // »ñÈ¡pending_outputs_ºÍËùÓĞversionsµÄ»îÔ¾ÎÄ¼ş
+  // è·å–pending_outputs_å’Œæ‰€æœ‰versionsçš„æ´»è·ƒæ–‡ä»¶
   std::set<uint64_t> live = pending_outputs_;
   versions_->AddLiveFiles(&live);
   
-  // ±éÀúdbÄ¿Â¼ÏÂµÄËùÓĞÎÄ¼ş
+  // éå†dbç›®å½•ä¸‹çš„æ‰€æœ‰æ–‡ä»¶
   std::vector<std::string> filenames;
   env_->GetChildren(dbname_, &filenames); // Ignoring errors on purpose
   uint64_t number;
@@ -245,43 +245,43 @@ void DBImpl::DeleteObsoleteFiles() {
       bool keep = true;
       switch (type) {
         case kLogFile:
-          // logÎÄ¼şÈç¹û¹ıÊ±ÁË£¬¾ÍÉ¾³ı
+          // logæ–‡ä»¶å¦‚æœè¿‡æ—¶äº†ï¼Œå°±åˆ é™¤
           keep = ((number >= versions_->LogNumber()) ||
                   (number == versions_->PrevLogNumber()));
           break;
         case kDescriptorFile:
           // Keep my manifest file, and any newer incarnations'
           // (in case there is a race that allows other incarnations)
-          // ÃèÊöÎÄ¼ş£¬Èç¹û¹ıÊ±ÔòÉ¾³ı
+          // æè¿°æ–‡ä»¶ï¼Œå¦‚æœè¿‡æ—¶åˆ™åˆ é™¤
           keep = (number >= versions_->ManifestFileNumber());
           break;
         case kTableFile:
-          // Èç¹ûtableÎÄ¼şÃ»ÓĞÔÚ»îÔ¾ÎÄ¼şÖĞ£¬ÔòÉ¾³ı
+          // å¦‚æœtableæ–‡ä»¶æ²¡æœ‰åœ¨æ´»è·ƒæ–‡ä»¶ä¸­ï¼Œåˆ™åˆ é™¤
           keep = (live.find(number) != live.end());
           break;
         case kTempFile:
           // Any temp files that are currently being written to must
           // be recorded in pending_outputs_, which is inserted into "live"
-          // ÕıÔÚĞ´µÄÁÙÊ±ÎÄ¼ş£¬Ó¦¸Ã¶¼±£´æÔÚpending_outputs_£¬Èç¹ûÃ»ÓĞÕÒµ½£¬Ôò¿ÉÒÔÉ¾³ı
+          // æ­£åœ¨å†™çš„ä¸´æ—¶æ–‡ä»¶ï¼Œåº”è¯¥éƒ½ä¿å­˜åœ¨pending_outputs_ï¼Œå¦‚æœæ²¡æœ‰æ‰¾åˆ°ï¼Œåˆ™å¯ä»¥åˆ é™¤
           keep = (live.find(number) != live.end());
           break;
         case kCurrentFile:
         case kDBLockFile:
         case kInfoLogFile:
-          // ÆäËûÎÄ¼şĞèÒª±£Áô
+          // å…¶ä»–æ–‡ä»¶éœ€è¦ä¿ç•™
           keep = true;
           break;
       }
 
       if (!keep) {
         if (type == kTableFile) {
-          // Èç¹ûÊÇtableÎÄ¼ş£¬ÔòĞèÒªÔÚtable_cache_ÖĞÉ¾³ı
+          // å¦‚æœæ˜¯tableæ–‡ä»¶ï¼Œåˆ™éœ€è¦åœ¨table_cache_ä¸­åˆ é™¤
           table_cache_->Evict(number);
         }
         Log(options_.info_log, "Delete type=%d #%lld\n",
             int(type),
             static_cast<unsigned long long>(number));
-        // É¾³ıÎÄ¼ş
+        // åˆ é™¤æ–‡ä»¶
         env_->DeleteFile(dbname_ + "/" + filenames[i]);
       }
     }
@@ -294,18 +294,18 @@ Status DBImpl::Recover(VersionEdit* edit) {
   // Ignore error from CreateDir since the creation of the DB is
   // committed only when the descriptor is created, and this directory
   // may already exist from a previous failed creation attempt.
-  // »Ö¸´Êı¾İ¿â
+  // æ¢å¤æ•°æ®åº“
   env_->CreateDir(dbname_);
   assert(db_lock_ == NULL);
-  // ¼ÓËø
+  // åŠ é”
   Status s = env_->LockFile(LockFileName(dbname_), &db_lock_);
   if (!s.ok()) {
     return s;
   }
 
-  // ¸ù¾İoptionµÄÑ¡ÏîÀ´ÅĞ¶ÏÊı¾İ¿âÎÄ¼ş×´Ì¬
+  // æ ¹æ®optionçš„é€‰é¡¹æ¥åˆ¤æ–­æ•°æ®åº“æ–‡ä»¶çŠ¶æ€
   if (!env_->FileExists(CurrentFileName(dbname_))) {
-    // Èç¹ûdbÎÄ¼ş²»´æÔÚ£¬Ôò´´½¨
+    // å¦‚æœdbæ–‡ä»¶ä¸å­˜åœ¨ï¼Œåˆ™åˆ›å»º
     if (options_.create_if_missing) {
       s = NewDB();
       if (!s.ok()) {
@@ -321,7 +321,7 @@ Status DBImpl::Recover(VersionEdit* edit) {
           dbname_, "exists (error_if_exists is true)");
     }
   }
-  // »Ö¸´VersionSet
+  // æ¢å¤VersionSet
   s = versions_->Recover();
   if (s.ok()) {
     SequenceNumber max_sequence(0);
@@ -335,17 +335,17 @@ Status DBImpl::Recover(VersionEdit* edit) {
     // produced by an older version of leveldb.
     const uint64_t min_log = versions_->LogNumber();
     const uint64_t prev_log = versions_->PrevLogNumber();
-	// »ñÈ¡ÏÖÔÚÄ¿Â¼ÖĞµÄËùÓĞÎÄ¼ş
+	// è·å–ç°åœ¨ç›®å½•ä¸­çš„æ‰€æœ‰æ–‡ä»¶
     std::vector<std::string> filenames;
     s = env_->GetChildren(dbname_, &filenames);
     if (!s.ok()) {
       return s;
     }
-	// »ñÈ¡ÏÖÔÚVersionSetÖĞµÄ»îÔ¾ÎÄ¼ş
+	// è·å–ç°åœ¨VersionSetä¸­çš„æ´»è·ƒæ–‡ä»¶
     std::set<uint64_t> expected;
     versions_->AddLiveFiles(&expected); 
 
-	// ·ÖÎölogsÎÄ¼ş£¬ÅĞ¶ÏÄÄĞ©ÎÄ¼şÊÇĞèÒªÎÒÃÇ´¦ÀíµÄ
+	// åˆ†ælogsæ–‡ä»¶ï¼Œåˆ¤æ–­å“ªäº›æ–‡ä»¶æ˜¯éœ€è¦æˆ‘ä»¬å¤„ç†çš„
     uint64_t number;
     FileType type;
     std::vector<uint64_t> logs;
@@ -357,7 +357,7 @@ Status DBImpl::Recover(VersionEdit* edit) {
       }
     }
     if (!expected.empty()) {
-	  // ËµÃ÷ÓĞÎÄ¼ş¶ªÊ§ÁË
+	  // è¯´æ˜æœ‰æ–‡ä»¶ä¸¢å¤±äº†
       char buf[50];
       snprintf(buf, sizeof(buf), "%d missing files; e.g.",
                static_cast<int>(expected.size()));
@@ -365,7 +365,7 @@ Status DBImpl::Recover(VersionEdit* edit) {
     }
 
     // Recover in the order in which the logs were generated
-	// °´ÕÕË³Ğò½øĞĞ»Ö¸´
+	// æŒ‰ç…§é¡ºåºè¿›è¡Œæ¢å¤
     std::sort(logs.begin(), logs.end());
     for (size_t i = 0; i < logs.size(); i++) {
       s = RecoverLogFile(logs[i], edit, &max_sequence);
@@ -373,12 +373,12 @@ Status DBImpl::Recover(VersionEdit* edit) {
       // The previous incarnation may not have written any MANIFEST
       // records after allocating this log number.  So we manually
       // update the file number allocation counter in VersionSet.
-	  // ±ê¼ÇÒÑÊ¹ÓÃµÄfile number
+	  // æ ‡è®°å·²ä½¿ç”¨çš„file number
       versions_->MarkFileNumberUsed(logs[i]);
     }
 
     if (s.ok()) {
-	  // ¸üĞÂsequence number
+	  // æ›´æ–°sequence number
       if (versions_->LastSequence() < max_sequence) {
         versions_->SetLastSequence(max_sequence);
       }
@@ -407,7 +407,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
   mutex_.AssertHeld();
 
   // Open the log file
-  // ´ò¿ªlogÎÄ¼ş
+  // æ‰“å¼€logæ–‡ä»¶
   std::string fname = LogFileName(dbname_, log_number);
   SequentialFile* file;
   Status status = env_->NewSequentialFile(fname, &file);
@@ -426,14 +426,14 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
   // paranoid_checks==false so that corruptions cause entire commits
   // to be skipped instead of propagating bad information (like overly
   // large sequence numbers).
-  // ´Ó0Æ«ÒÆ¿ªÊ¼¶ÁÈ¡ÎÄ¼ş£¬²¢×öchecksumĞ£Ñé
+  // ä»0åç§»å¼€å§‹è¯»å–æ–‡ä»¶ï¼Œå¹¶åšchecksumæ ¡éªŒ
   log::Reader reader(file, &reporter, true/*checksum*/,
                      0/*initial_offset*/);
   Log(options_.info_log, "Recovering log #%llu",
       (unsigned long long) log_number);
 
   // Read all the records and add to a memtable
-  // ¶ÁÈ¡logÖĞµÄ¼ÇÂ¼£¬Ìí¼Óµ½memtableÖĞ
+  // è¯»å–logä¸­çš„è®°å½•ï¼Œæ·»åŠ åˆ°memtableä¸­
   std::string scratch;
   Slice record;
   WriteBatch batch;
@@ -456,14 +456,14 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
     if (!status.ok()) {
       break;
     }
-	// ¸üĞÂsequence number
+	// æ›´æ–°sequence number
     const SequenceNumber last_seq =
         WriteBatchInternal::Sequence(&batch) +
         WriteBatchInternal::Count(&batch) - 1;
     if (last_seq > *max_sequence) {
       *max_sequence = last_seq;
     }
-	// Èç¹ûmemtableµÄ´óĞ¡³¬¹ıãĞÖµ£¬ÔòĞ´Èëlevel0 
+	// å¦‚æœmemtableçš„å¤§å°è¶…è¿‡é˜ˆå€¼ï¼Œåˆ™å†™å…¥level0 
     if (mem->ApproximateMemoryUsage() > options_.write_buffer_size) {
       status = WriteLevel0Table(mem, edit, NULL);
       if (!status.ok()) {
@@ -476,7 +476,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
     }
   }
 
-  // ×îºó°ÑËùÓĞµÄmemtable¶¼Ğ´level0
+  // æœ€åæŠŠæ‰€æœ‰çš„memtableéƒ½å†™level0
   if (status.ok() && mem != NULL) {
     status = WriteLevel0Table(mem, edit, NULL);
     // Reflect errors immediately so that conditions like full
@@ -488,7 +488,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number,
   return status;
 }
 
-// ½«memtableÄÚÈİĞ´Èëlevel0
+// å°†memtableå†…å®¹å†™å…¥level0
 Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
                                 Version* base) {
   mutex_.AssertHeld();
@@ -521,15 +521,15 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
     const Slice min_user_key = meta.smallest.user_key();
     const Slice max_user_key = meta.largest.user_key();
     if (base != NULL) {
-	  // Èç¹û´æÔÚbase versionµÄ»°
-      // ÄÇÃ´»á¸ù¾İbase versionÒÔ¼°rangeÀ´Ñ¡ÔñĞÂµÄlevel½øĞĞĞòÁĞ»¯.
+	  // å¦‚æœå­˜åœ¨base versionçš„è¯
+      // é‚£ä¹ˆä¼šæ ¹æ®base versionä»¥åŠrangeæ¥é€‰æ‹©æ–°çš„levelè¿›è¡Œåºåˆ—åŒ–.
       level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
     }
     edit->AddFile(level, meta.number, meta.file_size,
                   meta.smallest, meta.largest);
   }
 
-  // ĞŞ¸Ä Compaction µÄÍ³¼ÆÊı¾İ
+  // ä¿®æ”¹ Compaction çš„ç»Ÿè®¡æ•°æ®
   CompactionStats stats;
   stats.micros = env_->NowMicros() - start_micros;
   stats.bytes_written = meta.file_size;
@@ -542,7 +542,7 @@ void DBImpl::CompactMemTable() {
   assert(imm_ != NULL);
 
   // Save the contents of the memtable as a new Table
-  // ½«imm_Ğ´Èëlevel0 sstable
+  // å°†imm_å†™å…¥level0 sstable
   VersionEdit edit;
   Version* base = versions_->current();
   base->Ref();
@@ -555,9 +555,9 @@ void DBImpl::CompactMemTable() {
 
   // Replace immutable memtable with the generated Table
   if (s.ok()) {
-	// Ò»µ©Õâ¸ö immutable memtableµÄcompactionÍê³ÉÖ®ºó
-    // ÏàÓ¦µÄlog file number¾Í²»ĞèÒªÁË
-    // ½«Õâ¸öĞÅÏ¢¼ÇÂ¼ÔÚversion editÀïÃæ.
+	// ä¸€æ—¦è¿™ä¸ª immutable memtableçš„compactionå®Œæˆä¹‹å
+    // ç›¸åº”çš„log file numberå°±ä¸éœ€è¦äº†
+    // å°†è¿™ä¸ªä¿¡æ¯è®°å½•åœ¨version edité‡Œé¢.
     edit.SetPrevLogNumber(0);
     edit.SetLogNumber(logfile_number_);  // Earlier logs no longer needed 
     s = versions_->LogAndApply(&edit, &mutex_);
@@ -565,7 +565,7 @@ void DBImpl::CompactMemTable() {
 
   if (s.ok()) {
     // Commit to the new state
-	// ÊÍ·Åimm²¢ÇÒÉ¾³ı¶àÓàÎÄ¼ş.
+	// é‡Šæ”¾immå¹¶ä¸”åˆ é™¤å¤šä½™æ–‡ä»¶.
     imm_->Unref();
     imm_ = NULL;
     has_imm_.Release_Store(NULL);
@@ -576,7 +576,7 @@ void DBImpl::CompactMemTable() {
 }
 
 void DBImpl::CompactRange(const Slice* begin, const Slice* end) {
-  // ¼ì²éËù¸ø(begin,end)Çø¼ä´æÔÚoverlapµÄ×î´ólevelÊÇ¶àÉÙ
+  // æ£€æŸ¥æ‰€ç»™(begin,end)åŒºé—´å­˜åœ¨overlapçš„æœ€å¤§levelæ˜¯å¤šå°‘
   int max_level_with_files = 1;
   {
     MutexLock l(&mutex_);
@@ -587,10 +587,10 @@ void DBImpl::CompactRange(const Slice* begin, const Slice* end) {
       }
     }
   }
-  // ÏÈ¶Ômemtable½øĞĞcompact
+  // å…ˆå¯¹memtableè¿›è¡Œcompact
   TEST_CompactMemTable(); // TODO(sanjay): Skip if memtable does not overlap
   for (int level = 0; level < max_level_with_files; level++) {
-    // ¶ÔÓÚÃ¿Ò»²ã°´range½øĞĞCompact
+    // å¯¹äºæ¯ä¸€å±‚æŒ‰rangeè¿›è¡ŒCompact
     TEST_CompactRange(level, begin, end);
   }
 }
@@ -602,7 +602,7 @@ void DBImpl::TEST_CompactRange(int level, const Slice* begin,const Slice* end) {
   InternalKey begin_storage, end_storage;
 
   ManualCompaction manual;
-  manual.level = level;  // ½øĞĞCompactµÄlevel
+  manual.level = level;  // è¿›è¡ŒCompactçš„level
   manual.done = false;
   if (begin == NULL) {
     manual.begin = NULL;
@@ -634,11 +634,11 @@ void DBImpl::TEST_CompactRange(int level, const Slice* begin,const Slice* end) {
 
 Status DBImpl::TEST_CompactMemTable() {
   // NULL batch means just wait for earlier writes to be done
-  // µÈ´ıÖ®Ç°µÄĞ´²Ù×÷Íê³É
+  // ç­‰å¾…ä¹‹å‰çš„å†™æ“ä½œå®Œæˆ
   Status s = Write(WriteOptions(), NULL);
   if (s.ok()) {
     // Wait until the compaction completes
-    // µÈ´ıcompactionÍê³É
+    // ç­‰å¾…compactionå®Œæˆ
     MutexLock l(&mutex_);
     while (imm_ != NULL && bg_error_.ok()) {
       bg_cv_.Wait();
@@ -662,20 +662,20 @@ void DBImpl::MaybeScheduleCompaction() {
   mutex_.AssertHeld();
   if (bg_compaction_scheduled_) {
     // Already scheduled
-	// ÒÑ¾­±»µ÷¶È£¬²»½øĞĞÈÎºÎ²Ù×÷
+	// å·²ç»è¢«è°ƒåº¦ï¼Œä¸è¿›è¡Œä»»ä½•æ“ä½œ
   } else if (shutting_down_.Acquire_Load()) {
     // DB is being deleted; no more background compactions
-	// ÍË³ö£¬²»ĞèÒª²Ù×÷
+	// é€€å‡ºï¼Œä¸éœ€è¦æ“ä½œ
   } else if (!bg_error_.ok()) {
     // Already got an error; no more changes
-    // ºóÌ¨Ïß³Ì³ö´í
+    // åå°çº¿ç¨‹å‡ºé”™
   } else if (imm_ == NULL &&
              manual_compaction_ == NULL &&
              !versions_->NeedsCompaction()) {
     // No work to be done
-    // Ã»ÓĞĞèÒªCompactµÄÈÎÎñ
+    // æ²¡æœ‰éœ€è¦Compactçš„ä»»åŠ¡
   } else {
-    // ÉèÖÃ±êÖ¾£¬²¢ºóÌ¨µ÷¶È
+    // è®¾ç½®æ ‡å¿—ï¼Œå¹¶åå°è°ƒåº¦
     bg_compaction_scheduled_ = true;
     env_->Schedule(&DBImpl::BGWork, this);
   }
@@ -708,17 +708,17 @@ void DBImpl::BackgroundCompaction() {
   mutex_.AssertHeld();
 
   if (imm_ != NULL) {
-    // Èç¹ûimm_ ²»Îª¿ÕµÄ»°£¬ÏÈÑ¹ËõÕâ¸ö
+    // å¦‚æœimm_ ä¸ä¸ºç©ºçš„è¯ï¼Œå…ˆå‹ç¼©è¿™ä¸ª
     CompactMemTable();
     return;
   }
 
-  // imm_ÎªNULL
+  // imm_ä¸ºNULL
   Compaction* c;
   bool is_manual = (manual_compaction_ != NULL);
   InternalKey manual_end;
   if (is_manual) {
-    // Èç¹ûÊÇmanual_compaction_
+    // å¦‚æœæ˜¯manual_compaction_
     ManualCompaction* m = manual_compaction_;
     c = versions_->CompactRange(m->level, m->begin, m->end);
     m->done = (c == NULL);
@@ -1136,13 +1136,13 @@ Status DBImpl::Get(const ReadOptions& options,
   MutexLock l(&mutex_);
   SequenceNumber snapshot;
   if (options.snapshot != NULL) {
-    // ÅĞ¶ÏÊÇ·ñĞèÒª´ÓsnapshotÀïÃæ¶ÁÈ¡
+    // åˆ¤æ–­æ˜¯å¦éœ€è¦ä»snapshoté‡Œé¢è¯»å–
     snapshot = reinterpret_cast<const SnapshotImpl*>(options.snapshot)->number_;
   } else {
     snapshot = versions_->LastSequence();
   }
 
-  // Ôö¼ÓÒıÓÃ¼ÆÊı£¬·ÀÖ¹ÆäËûµØ·½ÊÍ·Å
+  // å¢åŠ å¼•ç”¨è®¡æ•°ï¼Œé˜²æ­¢å…¶ä»–åœ°æ–¹é‡Šæ”¾
   MemTable* mem = mem_;
   MemTable* imm = imm_;
   Version* current = versions_->current();
@@ -1150,7 +1150,7 @@ Status DBImpl::Get(const ReadOptions& options,
   if (imm != NULL) imm->Ref();
   current->Ref();
 
-  // ±¾´Î²éÑ¯ÊÇ·ñ´Ó´ÅÅÌÉÏ²éµ½
+  // æœ¬æ¬¡æŸ¥è¯¢æ˜¯å¦ä»ç£ç›˜ä¸ŠæŸ¥åˆ°
   bool have_stat_update = false;
   Version::GetStats stats;
 
@@ -1158,9 +1158,9 @@ Status DBImpl::Get(const ReadOptions& options,
   {
     mutex_.Unlock();
     // First look in the memtable, then in the immutable memtable (if any).
-    // 1.²éÑ¯memtable
-    // 2.Èç¹û´æÔÚimmutable memtable£¬²éÑ¯
-    // 3.´Ó´ÅÅÌ²éÑ¯
+    // 1.æŸ¥è¯¢memtable
+    // 2.å¦‚æœå­˜åœ¨immutable memtableï¼ŒæŸ¥è¯¢
+    // 3.ä»ç£ç›˜æŸ¥è¯¢
     LookupKey lkey(key, snapshot);
     if (mem->Get(lkey, value, &s)) {
       // Done
@@ -1169,12 +1169,12 @@ Status DBImpl::Get(const ReadOptions& options,
     } else {
       s = current->Get(options, lkey, value, &stats);
       have_stat_update = true;
-      // Èç¹ûÔÚ´ÅÅÌÉÏ²éÑ¯µÄ»°£¬ĞèÒª±ê¼Ç
+      // å¦‚æœåœ¨ç£ç›˜ä¸ŠæŸ¥è¯¢çš„è¯ï¼Œéœ€è¦æ ‡è®°
     }
     mutex_.Lock();
   }
 
-  // Èç¹ûÔÚ´ÅÅÌÉÏ²éÑ¯µÄ»°£¬¸üĞÂversionĞÅÏ¢£¬²¢ÇÒ³¢ÊÔCompaction
+  // å¦‚æœåœ¨ç£ç›˜ä¸ŠæŸ¥è¯¢çš„è¯ï¼Œæ›´æ–°versionä¿¡æ¯ï¼Œå¹¶ä¸”å°è¯•Compaction
   if (have_stat_update && current->UpdateStats(stats)) {
     MaybeScheduleCompaction();
   }
@@ -1349,11 +1349,11 @@ WriteBatch* DBImpl::BuildBatchGroup(Writer** last_writer) {
 Status DBImpl::MakeRoomForWrite(bool force) {
   mutex_.AssertHeld();
   assert(!writers_.empty());
-  // ÊÇ²»ÊÇÔÊĞíÑÓÊ±Ğ´Èë
+  // æ˜¯ä¸æ˜¯å…è®¸å»¶æ—¶å†™å…¥
   bool allow_delay = !force;
   Status s;
   while (true) {
-    // ºóÌ¨Ïß³Ì³ö´í
+    // åå°çº¿ç¨‹å‡ºé”™
     if (!bg_error_.ok()) {
       // Yield previous error
       s = bg_error_;
@@ -1367,30 +1367,30 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       // individual write by 1ms to reduce latency variance.  Also,
       // this delay hands over some CPU to the compaction thread in
       // case it is sharing the same core as the writer.
-      // ÔÊĞíÑÓÊ±Ğ´Èë£¬²¢ÇÒLevel0µÄĞ´ÈëÎÄ¼ş³¬¹ıãĞÖµ£¬½µµÍĞ´ÈëËÙ¶È
+      // å…è®¸å»¶æ—¶å†™å…¥ï¼Œå¹¶ä¸”Level0çš„å†™å…¥æ–‡ä»¶è¶…è¿‡é˜ˆå€¼ï¼Œé™ä½å†™å…¥é€Ÿåº¦
       mutex_.Unlock();
-      env_->SleepForMicroseconds(1000); // ÑÓÊ±1s
+      env_->SleepForMicroseconds(1000); // å»¶æ—¶1s
       allow_delay = false;  // Do not delay a single write more than once
       mutex_.Lock();
     } else if (!force &&
                (mem_->ApproximateMemoryUsage() <= options_.write_buffer_size)) {
       // There is room in current memtable
-      // Èç¹ûmemtableµÄ´óĞ¡µÍÓÚãĞÖµ£¬ËµÃ÷memtable¿ÉĞ´£¬²»½øĞĞĞ´Èë£¬·µ»Ø
+      // å¦‚æœmemtableçš„å¤§å°ä½äºé˜ˆå€¼ï¼Œè¯´æ˜memtableå¯å†™ï¼Œä¸è¿›è¡Œå†™å…¥ï¼Œè¿”å›
       break;
     } else if (imm_ != NULL) {
       // We have filled up the current memtable, but the previous
       // one is still being compacted, so we wait.
-      // ËµÃ÷Ö®Ç°ÒÑ¾­ÔÚ½øĞĞcompacted£¬µÈ´ı
+      // è¯´æ˜ä¹‹å‰å·²ç»åœ¨è¿›è¡Œcompactedï¼Œç­‰å¾…
       Log(options_.info_log, "Current memtable full; waiting...\n");
       bg_cv_.Wait();
     } else if (versions_->NumLevelFiles(0) >= config::kL0_StopWritesTrigger) {
       // There are too many level-0 files.
-      // ÓĞÌ«¶àµÄLevel0 ÎÄ¼ş£¬µÈ´ı
+      // æœ‰å¤ªå¤šçš„Level0 æ–‡ä»¶ï¼Œç­‰å¾…
       Log(options_.info_log, "Too many L0 files; waiting...\n");
       bg_cv_.Wait();
     } else {
       // Attempt to switch to a new memtable and trigger compaction of old
-      // ´´½¨ĞÂµÄlogÎÄ¼ş
+      // åˆ›å»ºæ–°çš„logæ–‡ä»¶
       assert(versions_->PrevLogNumber() == 0);
       uint64_t new_log_number = versions_->NewFileNumber();
       WritableFile* lfile = NULL;
@@ -1400,7 +1400,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
         versions_->ReuseFileNumber(new_log_number);
         break;
       }
-      // É¾³ı¾ÉµÄlogÎÄ¼ş£¬½«memtableÇĞ»»ÖÁimm_
+      // åˆ é™¤æ—§çš„logæ–‡ä»¶ï¼Œå°†memtableåˆ‡æ¢è‡³imm_
       delete log_;
       delete logfile_;
       logfile_ = lfile;
@@ -1411,7 +1411,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       mem_ = new MemTable(internal_comparator_);
       mem_->Ref();
       force = false;   // Do not force another compaction if have room
-      MaybeScheduleCompaction(); // ³¢ÊÔ½øĞĞCompact
+      MaybeScheduleCompaction(); // å°è¯•è¿›è¡ŒCompact
     }
   }
   return s;
@@ -1522,7 +1522,7 @@ Status DB::Open(const Options& options, const std::string& dbname,
   VersionEdit edit;
   Status s = impl->Recover(&edit); // Handles create_if_missing, error_if_exists
   if (s.ok()) {
-    // ´´½¨ĞÂµÄlogÎÄ¼ş
+    // åˆ›å»ºæ–°çš„logæ–‡ä»¶
     uint64_t new_log_number = impl->versions_->NewFileNumber();
     WritableFile* lfile;
     s = options.env->NewWritableFile(LogFileName(dbname, new_log_number),
@@ -1535,13 +1535,13 @@ Status DB::Open(const Options& options, const std::string& dbname,
       s = impl->versions_->LogAndApply(&edit, &impl->mutex_);
     }
     if (s.ok()) {
-      impl->DeleteObsoleteFiles();  // É¾³ı²»±ØÒªµÄÎÄ¼ş
-      impl->MaybeScheduleCompaction(); //½øĞĞcompaction.
+      impl->DeleteObsoleteFiles();  // åˆ é™¤ä¸å¿…è¦çš„æ–‡ä»¶
+      impl->MaybeScheduleCompaction(); //è¿›è¡Œcompaction.
     }
   }
   impl->mutex_.Unlock();
   if (s.ok()) {
-    *dbptr = impl;  // ·µ»ØDB¶ÔÏó
+    *dbptr = impl;  // è¿”å›DBå¯¹è±¡
   } else {
     delete impl;
   }
@@ -1559,7 +1559,7 @@ Status DestroyDB(const std::string& dbname, const Options& options) {
   if (filenames.empty()) {
     return Status::OK();
   }
-  // É¾³ıËùÓĞµÄdbÎÄ¼ş£¬LOCKÎÄ¼ş×îºóÉ¾³ı
+  // åˆ é™¤æ‰€æœ‰çš„dbæ–‡ä»¶ï¼ŒLOCKæ–‡ä»¶æœ€ååˆ é™¤
   FileLock* lock;
   const std::string lockname = LockFileName(dbname);
   Status result = env->LockFile(lockname, &lock);
