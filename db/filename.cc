@@ -71,12 +71,12 @@ std::string OldInfoLogFileName(const std::string& dbname) {
 
 
 // Owned filenames have the form:
-//    dbname/CURRENT  µ±Ç°ÎÄ¼ş
-//    dbname/LOCK   Ëø
-//    dbname/LOG   ÈÕÖ¾
+//    dbname/CURRENT  å½“å‰æ–‡ä»¶
+//    dbname/LOCK   é”
+//    dbname/LOG   æ—¥å¿—
 //    dbname/LOG.old
-//    dbname/MANIFEST-[0-9]+  ÃèÊöÎÄ¼ş   [0-9]+ ±íÊ¾Ò»¸ösequence number
-//    dbname/[0-9]+.(log|sst|ldb)   .log: db log ÎÄ¼ş  sst:sstableÎÄ¼ş  
+//    dbname/MANIFEST-[0-9]+  æè¿°æ–‡ä»¶   [0-9]+ è¡¨ç¤ºä¸€ä¸ªsequence number
+//    dbname/[0-9]+.(log|sst|ldb)   .log: db log æ–‡ä»¶  sst:sstableæ–‡ä»¶  
 bool ParseFileName(const std::string& fname,
                    uint64_t* number,
                    FileType* type) {
@@ -123,7 +123,7 @@ bool ParseFileName(const std::string& fname,
   return true;
 }
 
-// ½«MANIFEST-%(descriptor_number)llu+"\n"Ğ´Èëµ½.dbtmpÏÂÃæÈ¥È»ºórename³ÉÎªCURRENTÎÄ¼ş.
+// å°†MANIFEST-%(descriptor_number)llu+"\n"å†™å…¥åˆ°.dbtmpä¸‹é¢å»ç„¶årenameæˆä¸ºCURRENTæ–‡ä»¶.
 Status SetCurrentFile(Env* env, const std::string& dbname,
                       uint64_t descriptor_number) {
   // Remove leading "dbname/" and add newline to manifest file name

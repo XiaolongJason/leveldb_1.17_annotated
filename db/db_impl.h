@@ -120,24 +120,24 @@ class DBImpl : public DB {
 
   // Constant after construction
   Env* const env_;
-  const InternalKeyComparator internal_comparator_;  // ÄÚ²¿±È½ÏÆ÷
-  const InternalFilterPolicy internal_filter_policy_; // ¹ıÂË²ßÂÔ
+  const InternalKeyComparator internal_comparator_;  // å†…éƒ¨æ¯”è¾ƒå™¨
+  const InternalFilterPolicy internal_filter_policy_; // è¿‡æ»¤ç­–ç•¥
   const Options options_;  // options_.comparator == &internal_comparator_
-  bool owns_info_log_; // ÊÇ·ñ×Ô¼º·ÖÅäµÄlog
-  bool owns_cache_;  // ÊÇ·ñ×Ô¼º·ÖÅäµÄcache
-  const std::string dbname_;  // db Ãû³Æ
+  bool owns_info_log_; // æ˜¯å¦è‡ªå·±åˆ†é…çš„log
+  bool owns_cache_;  // æ˜¯å¦è‡ªå·±åˆ†é…çš„cache
+  const std::string dbname_;  // db åç§°
 
   // table_cache_ provides its own synchronization
-  TableCache* table_cache_; // tablecache ÓĞ×Ô¼ºµÄÍ¬²½±£Ö¤
+  TableCache* table_cache_; // tablecache æœ‰è‡ªå·±çš„åŒæ­¥ä¿è¯
 
   // Lock over the persistent DB state.  Non-NULL iff successfully acquired.
-  FileLock* db_lock_; // ¶ÔÓÚÍâ²¿¶ÔÏóµÄdbËø
+  FileLock* db_lock_; // å¯¹äºå¤–éƒ¨å¯¹è±¡çš„dbé”
 
   // State below is protected by mutex_
   port::Mutex mutex_;
-  port::AtomicPointer shutting_down_;  // ±êÖ¾ÕıÔÚÍË³ö£¬ºóÌ¨Ïß³ÌÔÚÕâ¸ö±êÖ¾ÎªtrueÊ±Í£Ö¹¹¤×÷
+  port::AtomicPointer shutting_down_;  // æ ‡å¿—æ­£åœ¨é€€å‡ºï¼Œåå°çº¿ç¨‹åœ¨è¿™ä¸ªæ ‡å¿—ä¸ºtrueæ—¶åœæ­¢å·¥ä½œ
   port::CondVar bg_cv_;          // Signalled when background work finishes
-  MemTable* mem_;	// ÕıÔÚ²Ù×÷µÄMemTable
+  MemTable* mem_;	// æ­£åœ¨æ“ä½œçš„MemTable
   MemTable* imm_;                // Memtable being compacted 
   port::AtomicPointer has_imm_;  // So bg thread can detect non-NULL imm_
   WritableFile* logfile_;
@@ -149,14 +149,14 @@ class DBImpl : public DB {
   std::deque<Writer*> writers_;
   WriteBatch* tmp_batch_;
 
-  SnapshotList snapshots_;  // ËùÓĞµÄsnapshots
+  SnapshotList snapshots_;  // æ‰€æœ‰çš„snapshots
 
   // Set of table files to protect from deletion because they are
   // part of ongoing compactions.
-  std::set<uint64_t> pending_outputs_;  //ÕıÔÚ½øĞĞcompactionµÄÎÄ¼ş£¬¼ÓÈëÕâ¸öÁĞ±íºó²»»á±»É¾³ı
+  std::set<uint64_t> pending_outputs_;  //æ­£åœ¨è¿›è¡Œcompactionçš„æ–‡ä»¶ï¼ŒåŠ å…¥è¿™ä¸ªåˆ—è¡¨åä¸ä¼šè¢«åˆ é™¤
 
   // Has a background compaction been scheduled or is running?
-  bool bg_compaction_scheduled_; // ºóÌ¨Ïß³ÌÊÇ·ñ¿ÉÒÔ±»µ÷¶È
+  bool bg_compaction_scheduled_; // åå°çº¿ç¨‹æ˜¯å¦å¯ä»¥è¢«è°ƒåº¦
 
   // Information for a manual compaction
   struct ManualCompaction {
@@ -168,10 +168,10 @@ class DBImpl : public DB {
   };
   ManualCompaction* manual_compaction_;
 
-  VersionSet* versions_; // °æ±¾ºÏ¼¯
+  VersionSet* versions_; // ç‰ˆæœ¬åˆé›†
 
   // Have we encountered a background error in paranoid mode?
-  Status bg_error_; // ºóÌ¨Ïß³ÌµÄ×´Ì¬
+  Status bg_error_; // åå°çº¿ç¨‹çš„çŠ¶æ€
 
   // Per level compaction stats.  stats_[level] stores the stats for
   // compactions that produced data for the specified "level".
@@ -188,7 +188,7 @@ class DBImpl : public DB {
       this->bytes_written += c.bytes_written;
     }
   };
-  CompactionStats stats_[config::kNumLevels]; // ¸÷levelµÄÑ¹Ëõ×´Ì¬ĞÅÏ¢.
+  CompactionStats stats_[config::kNumLevels]; // å„levelçš„å‹ç¼©çŠ¶æ€ä¿¡æ¯.
 
   // No copying allowed
   DBImpl(const DBImpl&);

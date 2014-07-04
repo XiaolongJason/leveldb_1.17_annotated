@@ -1,4 +1,4 @@
-// Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+ï»¿// Copyright (c) 2011 The LevelDB Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
@@ -19,17 +19,17 @@ namespace leveldb {
 // Grouping of constants.  We may want to make some of these
 // parameters set via options.
 namespace config {
-static const int kNumLevels = 7;  // db×î´ólevelÊı
+static const int kNumLevels = 7;  // dbæœ€å¤§levelæ•°
 
 // Level-0 compaction is started when we hit this many files.
-static const int kL0_CompactionTrigger = 4;  //Level-0µÄÎÄ¼ş³¬¹ıãĞÖµ´¥·¢compaction
+static const int kL0_CompactionTrigger = 4;  //Level-0çš„æ–‡ä»¶è¶…è¿‡é˜ˆå€¼è§¦å‘compaction
 
 // Soft limit on number of level-0 files.  We slow down writes at this point.
-// Èç¹ûLevel-0ÎÄ¼ş³¬¹ıµÄ»°£¬»á·ÅÂımemtableĞ´ÎªLevel-0µÄËÙ¶È  DBImpl::MakeRoomForWrite(bool force) ÀïÃæÓÃµ½Õâ¸ö²ÎÊı
+// å¦‚æœLevel-0æ–‡ä»¶è¶…è¿‡çš„è¯ï¼Œä¼šæ”¾æ…¢memtableå†™ä¸ºLevel-0çš„é€Ÿåº¦  DBImpl::MakeRoomForWrite(bool force) é‡Œé¢ç”¨åˆ°è¿™ä¸ªå‚æ•°
 static const int kL0_SlowdownWritesTrigger = 8;  
 
 // Maximum number of level-0 files.  We stop writes at this point.
-// Èç¹ûLevel-0ÎÄ¼ş³¬¹ıÕâ¸öµÄ»°£¬»áÍ£Ö¹memtableĞ´ÎªLevel-0
+// å¦‚æœLevel-0æ–‡ä»¶è¶…è¿‡è¿™ä¸ªçš„è¯ï¼Œä¼šåœæ­¢memtableå†™ä¸ºLevel-0
 static const int kL0_StopWritesTrigger = 12;
 
 // Maximum level to which a new compacted memtable is pushed if it
@@ -38,12 +38,12 @@ static const int kL0_StopWritesTrigger = 12;
 // expensive manifest file operations.  We do not push all the way to
 // the largest level since that can generate a lot of wasted disk
 // space if the same key space is being repeatedly overwritten.
-// ¶ÔÓÚmemtable½øĞĞcompactionµÄ»°Ñ¡ÔñµÄ×î¸ßlevel.
-// Version::PickLevelForMemTableOutput ÀïÃæÓÃµ½Õâ¸ö²ÎÊı
+// å¯¹äºmemtableè¿›è¡Œcompactionçš„è¯é€‰æ‹©çš„æœ€é«˜level.
+// Version::PickLevelForMemTableOutput é‡Œé¢ç”¨åˆ°è¿™ä¸ªå‚æ•°
 static const int kMaxMemCompactLevel = 2;
 
 // Approximate gap in bytes between samples of data read during iteration.
-// µü´úÆ÷¶ÁÈ¡Êı¾İÊ±×Ö½ÚÊı
+// è¿­ä»£å™¨è¯»å–æ•°æ®æ—¶å­—èŠ‚æ•°
 static const int kReadBytesPeriod = 1048576;
 
 }  // namespace config
